@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">GameVault</string>
+    <string name="homepage">Home Page</string>
+    <string name="homepage_screen_title">Home Page</string>
+    <string name="game_details_screen_title">Game Details</string>
+    <string name="game_list_screen_title">Game List</string>
+    <string name="game_library_screen_title">Games Library</string>
+    <string name="searchpage_screen_title">Search Page</string>
+    <string name="error">Error</string>
+    <string name="network_error">Network error</string>
+</resources>
