@@ -7,8 +7,8 @@ import retrofit2.http.Body
 import retrofit2.http.Headers
 import retrofit2.http.POST
 
-const val clientId = "xmn1wndpubbcock9zo72awnb029akv"
-const val auth = "Bearer zvy5ljtk5ac82seefns3ovycjba7nj"
+const val clientId = "aaa"
+const val auth = "Bearer bbb"
 
 interface ApiService {
     @Headers(
