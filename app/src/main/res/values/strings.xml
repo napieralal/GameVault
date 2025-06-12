@@ -8,4 +8,8 @@
     <string name="searchpage_screen_title">Search Page</string>
     <string name="error">Error</string>
     <string name="network_error">Network error</string>
+    <string name="auth_screen_title">Authentication</string>
+    <string name="login_screen_title">Login</string>
+    <string name="register_screen_title">Register</string>
+    <string name="default_web_client_id">479745475923-otl4q5uvoa355b512raegavcbu3bg9df.apps.googleusercontent.com</string>
 </resources>

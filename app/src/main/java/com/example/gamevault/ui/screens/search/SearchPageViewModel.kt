@@ -10,7 +10,7 @@ import kotlinx.coroutines.launch
 import okhttp3.RequestBody.Companion.toRequestBody
 
 enum class SortType {
-    RELEVANCE, RATING, NAME
+    RELEVANCE, RATING, NAME, RELEASE_DATE, POPULARITY
 }
 
 data class SearchFilters(
@@ -96,17 +96,23 @@ class SearchViewModel(
 
     private suspend fun fetchGames(filters: SearchFilters, page: Int): List<Game> {
         val offset = page * pageSize
-        val sortField = when (filters.sortType) {
-            SortType.RELEVANCE -> null
-            SortType.RATING -> "total_rating desc"
-            SortType.NAME -> "name asc"
+        val sortField = if (filters.query.isNotBlank()) {
+            null
+        } else {
+            when (filters.sortType) {
+                SortType.RELEVANCE -> null
+                SortType.RATING -> "total_rating desc"
+                SortType.NAME -> "name asc"
+                SortType.RELEASE_DATE -> "first_release_date desc"
+                SortType.POPULARITY -> "rating_count desc"
+            }
         }
 
         val startYearTimestamp = yearToUnixTimestamp(filters.yearRange.first)
         val endYearTimestamp = yearToUnixTimestamp(filters.yearRange.last, endOfYear = true)
 
         val queryBuilder = StringBuilder().apply {
-            append("fields name, genres.name, platforms.name, cover.image_id, total_rating, rating_count, first_release_date; ")
+            append("fields name, genres.name, platforms.name, cover.image_id, total_rating, rating_count, first_release_date, game_type; ")
             append("limit $pageSize; offset $offset; ")
 
             // SEARCH
@@ -258,7 +264,31 @@ class SearchViewModel(
             FilterSection(
                 title = "Genres",
                 type = FilterType.CHECKBOX,
-                items = listOf(FilterItem(12, "RPG"), FilterItem(5, "Shooter")),
+                items = listOf(
+                    FilterItem(30, "Pinball"),
+                    FilterItem(31, "Adventure"),
+                    FilterItem(32, "Indie"),
+                    FilterItem(33, "Arcade"),
+                    FilterItem(34, "Visual Novel"),
+                    FilterItem(35, "Card & Board Game"),
+                    FilterItem(36, "MOBA"),
+                    FilterItem(2, "Point-and-click"),
+                    FilterItem(4, "Fighting"),
+                    FilterItem(5, "Shooter"),
+                    FilterItem(7, "Music"),
+                    FilterItem(8, "Platform"),
+                    FilterItem(9, "Puzzle"),
+                    FilterItem(10, "Racing"),
+                    FilterItem(11, "Real Time Strategy (RTS)"),
+                    FilterItem(12, "Role-playing (RPG)"),
+                    FilterItem(13, "Simulator"),
+                    FilterItem(14, "Sport"),
+                    FilterItem(15, "Strategy"),
+                    FilterItem(16, "Turn-based strategy (TBS)"),
+                    FilterItem(17, "Tactical"),
+                    FilterItem(18, "Hack and slash/Beat 'em up"),
+                    FilterItem(26, "Quiz/Trivia")
+                ),
                 selectedIds = filters.selectedGenreIds,
                 onToggle = { id ->
                     onChange(filters.copy(selectedGenreIds = toggle(filters.selectedGenreIds, id)))
@@ -267,7 +297,18 @@ class SearchViewModel(
             FilterSection(
                 title = "Platforms",
                 type = FilterType.CHECKBOX,
-                items = listOf(FilterItem(48, "PC"), FilterItem(49, "Xbox")),
+                items = listOf(
+                    FilterItem(14, "Mac"),
+                    FilterItem(6, "PC (Microsoft Windows)"),
+                    FilterItem(3, "Linux"),
+                    FilterItem(167, "PlayStation 5"),
+                    FilterItem(169, "Xbox Series X|S"),
+                    FilterItem(49, "Xbox One"),
+                    FilterItem(48, "PlayStation 4"),
+                    FilterItem(130, "Nintendo Switch"),
+                    FilterItem(46, "PlayStation 3"),
+                    FilterItem(45, "Xbox 360")
+                ),
                 selectedIds = filters.selectedPlatformIds,
                 onToggle = { id ->
                     onChange(filters.copy(selectedPlatformIds = toggle(filters.selectedPlatformIds, id)))
@@ -294,7 +335,12 @@ class SearchViewModel(
             FilterSection(
                 title = "Modes",
                 type = FilterType.CHECKBOX,
-                items = listOf(FilterItem(1, "Singleplayer"), FilterItem(2, "Multiplayer")),
+                items = listOf(
+                    FilterItem(1, "Singleplayer"),
+                    FilterItem(2, "Multiplayer"),
+                    FilterItem(3, "Co-operative"),
+                    FilterItem(4, "Split screen")
+                ),
                 selectedIds = filters.selectedModeIds,
                 onToggle = { id ->
                     onChange(filters.copy(selectedModeIds = toggle(filters.selectedModeIds, id)))
@@ -303,7 +349,15 @@ class SearchViewModel(
             FilterSection(
                 title = "Perspective",
                 type = FilterType.CHECKBOX,
-                items = listOf(FilterItem(1, "First-person"), FilterItem(2, "Third-person")),
+                items = listOf(
+                    FilterItem(1, "First-person"),
+                    FilterItem(2, "Third-person"),
+                    FilterItem(3, "Text"),
+                    FilterItem(4, "Side view"),
+                    FilterItem(5, "Virtual Reality"),
+                    FilterItem(6, "Bird view / Isometric"),
+                    FilterItem(7, "Auditory")
+                ),
                 selectedIds = filters.selectedPerspectiveIds,
                 onToggle = { id ->
                     onChange(filters.copy(selectedPerspectiveIds = toggle(filters.selectedPerspectiveIds, id)))
@@ -318,6 +372,10 @@ class SearchViewModel(
 
     fun updateFilters(newFilters: SearchFilters) {
         _filters.value = newFilters
+    }
+
+    fun setGenreFilterById(genreId: Int) {
+        _filters.update { it.copy(selectedGenreIds = listOf(genreId)) }
     }
 }
 

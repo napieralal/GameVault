@@ -21,7 +21,7 @@ import com.example.gamevault.model.ReleaseDate
 import com.example.gamevault.model.Screenshot
 import com.example.gamevault.model.Theme
 import com.example.gamevault.ui.theme.GameVaultTheme
-import androidx.compose.ui.res.painterResource
+import androidx.navigation.compose.rememberNavController
 
 private val sampleGameDetails = GameDetails(
     id = 1,
@@ -41,25 +41,45 @@ private val sampleGameDetails = GameDetails(
     involved_companies = listOf(
         InvolvedCompany(company = Company("CD Projekt"), developer = true)
     ),
-    screenshots = listOf(Screenshot("sc1xyz"), Screenshot("sc2abc")),
+    screenshots = listOf(
+        Screenshot("screenshot1_id"),
+        Screenshot("screenshot2_id")
+    ),
     themes = listOf(Theme("Cyberpunk")),
     collections = listOf(Collections("Cyberpunk Series")),
     similar_games = listOf(
         Game(
-        id = 3,
-        name = "Elden Ring",
-        genres = listOf(Genre("RPG"), Genre("Soulslike")),
+            id = 3,
+            name = "Elden Ring",
+            genres = listOf(Genre("RPG"), Genre("Soulslike")),
             cover = Cover("local_elden_ring"),
-        total_rating = 9.0
+            total_rating = 9.0,
+            first_release_date = 1607558400L,
+            platforms = listOf(
+                Platform(name = "PC"),
+                Platform(name = "PS5"),
+                Platform(name = "Xbox Series X")
+            ),
+            game_type = 3,
+            release_dates = null
+        ),
+        Game(
+            id = 3,
+            name = "Elden Ring",
+            genres = listOf(Genre("RPG"), Genre("Soulslike")),
+            cover = Cover("local_elden_ring"),
+            total_rating = 9.0,
+            first_release_date = 1607558400L,
+            platforms = listOf(
+                Platform(name = "PC"),
+                Platform(name = "PS5"),
+                Platform(name = "Xbox Series X")
+            ),
+            game_type = 7,
+            release_dates = null
+        )
     ),
-    Game(
-        id = 3,
-        name = "Elden Ring",
-        genres = listOf(Genre("RPG"), Genre("Soulslike")),
-        cover = Cover("local_elden_ring"),
-        total_rating = 9.0
-    )
-    )
+    first_release_date = 1607558400L
 )
 
 @Preview(showBackground = true, showSystemUi = true)
@@ -81,6 +101,12 @@ fun GameDetailsPreview() {
             item {
                 ScreenshotRow(sampleGameDetails.screenshots ?: emptyList())
             }
+
+            item {
+                GameDetailsSection(sampleGameDetails)
+            }
+
+            item { SimilarGamesList(sampleGameDetails.similar_games ?: emptyList(), navController = rememberNavController()) }
         }
     }
 }

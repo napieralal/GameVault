@@ -1,5 +1,6 @@
 package com.example.gamevault.ui.screens.games.GameListScreen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,13 +33,19 @@ fun GameListScreen(
     when (val state = uiState) {
         is GameListUiState.Initial -> {
             Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Loading data...", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "Loading data...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
             }
         }
 
         is GameListUiState.Loading -> {
             Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
 
@@ -46,7 +53,8 @@ fun GameListScreen(
             Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
                     text = state.message,
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
         }
@@ -54,7 +62,10 @@ fun GameListScreen(
         is GameListUiState.Success -> {
             LazyColumn(
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
             ) {
                 items(state.games) { game ->
                     GameCardHorizontal(

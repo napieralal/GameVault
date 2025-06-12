@@ -1,11 +1,16 @@
 package com.example.gamevault
 
+import android.app.Application
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.gamevault.network.RetrofitClient
+import com.example.gamevault.ui.screens.games.GamesLibrary.LibraryViewModel
 import com.example.gamevault.ui.screens.games.GameListScreen.GameListScreenViewModel
 import com.example.gamevault.ui.screens.games.GameDetails.GameDetailsViewModel
+import com.example.gamevault.ui.screens.homepage.HomePageViewModel
 import com.example.gamevault.ui.screens.search.SearchViewModel
 
 
@@ -30,6 +35,18 @@ object GameVaultAppViewModelProvider {
                 this.createSavedStateHandle(),
                 searchApiService = RetrofitClient.apiServiceInstance,
             )
+        }
+
+        initializer {
+            HomePageViewModel(
+                this.createSavedStateHandle(),
+                homeApiService = RetrofitClient.apiServiceInstance,
+            )
+        }
+
+        initializer {
+            val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as Application
+            LibraryViewModel(application)
         }
 
         /*initializer {

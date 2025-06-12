@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -56,7 +57,19 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.foundation)
-    implementation(libs.androidx.compose.bom.v20250501)
+    implementation(platform(libs.androidx.compose.bom.v20250501))
+    implementation(libs.androidx.material.icons.extended)
+    implementation("br.com.devsrsouza.compose.icons:font-awesome:1.1.1")
+    implementation(platform("com.google.firebase:firebase-bom:33.15.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.android.gms:play-services-auth:20.5.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.room:room-runtime:2.5.2")
+    implementation("androidx.room:room-ktx:2.5.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
+    ksp("androidx.room:room-compiler:2.5.2")
     ksp(libs.moshi.codegen)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

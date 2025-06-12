@@ -4,9 +4,6 @@ import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
-data class Platform(val name: String)
-
-@JsonClass(generateAdapter = true)
 data class GameMode(val name: String)
 
 @JsonClass(generateAdapter = true)
@@ -64,5 +61,6 @@ data class GameDetails(
     //val franchises: Franchises?,
     val collections: List<Collections>?,
     val game_engines: List<GameEngine>?,
+    val first_release_date: Long?,
     val similar_games: List<Game>?,
 )

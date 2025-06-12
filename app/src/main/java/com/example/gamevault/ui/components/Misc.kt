@@ -35,9 +35,9 @@ fun ExpandableText(
     title: String,
     text: String,
     maxLinesCollapsed: Int = 3,
-    textColor: Color = Color.Unspecified,
-    titleColor: Color = Color.Unspecified,
-    toggleColor: Color = Color.Gray
+    textColor: Color = MaterialTheme.colorScheme.onSurface,
+    titleColor: Color = MaterialTheme.colorScheme.onSurface,
+    toggleColor: Color = MaterialTheme.colorScheme.primary
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -70,6 +70,7 @@ fun SectionLabel(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.padding(bottom = 4.dp)
     )
 }
@@ -107,15 +108,21 @@ fun SortMenu(currentSort: SortType, onSortSelected: (SortType) -> Unit) {
                 .clickable { expanded = true }
                 .background(MaterialTheme.colorScheme.surface)
                 .padding(8.dp),
-            color = Color.Black
+            color = MaterialTheme.colorScheme.onSurface
         )
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
+            containerColor = MaterialTheme.colorScheme.surface
         ) {
             SortType.values().forEach { type ->
                 DropdownMenuItem(
-                    text = { Text(type.name.lowercase().replaceFirstChar { it.uppercaseChar() }) },
+                    text = {
+                        Text(
+                            text = type.name.lowercase().replaceFirstChar { it.uppercaseChar() },
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    },
                     onClick = {
                         onSortSelected(type)
                         expanded = false

@@ -1,5 +1,6 @@
 package com.example.gamevault.model
 
+import android.os.Parcelable
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
@@ -11,6 +12,8 @@ data class Cover(
 @JsonClass(generateAdapter = true)
 data class Genre(val name: String)
 
+@JsonClass(generateAdapter = true)
+data class Platform(val name: String)
 
 @JsonClass(generateAdapter = true)
 data class Game(
@@ -18,7 +21,11 @@ data class Game(
     val name: String?,
     val genres: List<Genre>?,
     val cover: Cover?,
-    val total_rating: Double?
+    val total_rating: Double?,
+    val first_release_date: Long?,
+    val platforms: List<Platform>?,
+    val game_type: Int?,
+    val release_dates: List<ReleaseDate>?
     /*@Json(name = "rating_count") val ratingCount: Int?,
     @Json(name = "aggregated_rating") val aggregatedRating: Double?,*/
 )

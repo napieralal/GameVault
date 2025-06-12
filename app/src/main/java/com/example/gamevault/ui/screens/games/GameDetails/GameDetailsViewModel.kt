@@ -41,8 +41,8 @@ class GameDetailsViewModel(
     private fun fetchGameDetails() {
         _uiState.value = GameDetailsUiState.Loading
         val query = """
-                    fields id,name,summary,storyline,genres.name,platforms.name,release_dates.human,
-        involved_companies.company.name,involved_companies.developer,
+        fields id,name,summary,storyline,genres.name,platforms.name,first_release_date,
+        release_dates.human,involved_companies.company.name,involved_companies.developer,
         screenshots.image_id,cover.image_id,total_rating,rating_count,
         themes.name,game_modes.name,player_perspectives.name,
         game_engines.name,

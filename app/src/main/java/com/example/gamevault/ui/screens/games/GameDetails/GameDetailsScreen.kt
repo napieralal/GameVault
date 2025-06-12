@@ -1,5 +1,6 @@
 package com.example.gamevault.ui.screens.games.GameDetails
 
+import android.icu.text.SimpleDateFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -54,6 +55,8 @@ import com.example.gamevault.ui.components.GameCardVertical
 import com.example.gamevault.ui.components.SectionLabel
 import com.example.gamevault.ui.components.FullscreenImageDialog
 import androidx.compose.foundation.lazy.grid.items
+import java.util.Date
+import java.util.Locale
 
 enum class GameTab(val label: String) {
     ABOUT("About"),
@@ -111,13 +114,16 @@ fun GameDetailsScreen(
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFF1E1E1E))
+                            .background(MaterialTheme.colorScheme.surface)
                             .padding(vertical = 8.dp)
                     ) {
                         GameTab.values().forEach { tab ->
                             Text(
                                 text = tab.label,
-                                color = if (tab == selectedTab) Color.White else Color.Gray,
+                                color = if (tab == selectedTab)
+                                    MaterialTheme.colorScheme.onSurface
+                                else
+                                    MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier
                                     .clickable { selectedTab = tab }
                                     .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -175,9 +181,13 @@ fun GameHeader(game: GameDetails) {
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            game.release_dates?.firstOrNull()?.human?.let {
+            game.first_release_date?.let { timestamp ->
+                val date = Date(timestamp * 1000)
+                val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                val formattedDate = formatter.format(date)
+
                 Text(
-                    text = it,
+                    text = formattedDate,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -217,7 +227,7 @@ fun GameHeader(game: GameDetails) {
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFF1E1E1E))
+                    .background(MaterialTheme.colorScheme.primary)
                     .padding(12.dp)
                     .align(Alignment.CenterVertically)
             ) {
@@ -227,7 +237,7 @@ fun GameHeader(game: GameDetails) {
                     Text(
                         text = game.total_rating?.let { "★ %.1f".format(it) } ?: "",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
 
                     Text(
@@ -240,7 +250,7 @@ fun GameHeader(game: GameDetails) {
                             "$short ratings"
                         } ?: "No rating",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.LightGray
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
                     )
                 }
             }
@@ -254,15 +264,15 @@ fun GameInfoSection(game: GameDetails) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF2E2E2E))
+            .background(MaterialTheme.colorScheme.surface)
             .padding(16.dp)
     ) {
         game.genres?.joinToString { it.name }?.let {
-            Text("Genres: $it", color = Color.White)
+            Text("Genres: $it", color = MaterialTheme.colorScheme.onSurface)
         }
 
         game.platforms?.joinToString { it.name }?.let {
-            Text("Platforms: $it", color = Color.White)
+            Text("Platforms: $it", color = MaterialTheme.colorScheme.onSurface)
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -271,9 +281,9 @@ fun GameInfoSection(game: GameDetails) {
             ExpandableText(
                 title = "Summary:",
                 text = game.summary,
-                textColor = Color.White,
-                titleColor = Color.White,
-                toggleColor = Color.LightGray
+                textColor = MaterialTheme.colorScheme.onSurface,
+                titleColor = MaterialTheme.colorScheme.primary,
+                toggleColor = MaterialTheme.colorScheme.secondary
             )
         }
         /* game.franchises?.let {
@@ -284,9 +294,11 @@ fun GameInfoSection(game: GameDetails) {
 
 @Composable
 fun GameDetailsSection(game: GameDetails) {
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
             .padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -301,7 +313,7 @@ fun GameDetailsSection(game: GameDetails) {
                 ?.joinToString()
                 ?.let {
                     SectionLabel("Main Developers")
-                    Text(it)
+                    Text(it, color = MaterialTheme.colorScheme.onBackground)
                     Spacer(modifier = Modifier.height(12.dp))
                 }
 
@@ -311,19 +323,19 @@ fun GameDetailsSection(game: GameDetails) {
                 ?.joinToString()
                 ?.let {
                     SectionLabel("Involved Companies")
-                    Text(it)
+                    Text(it, color = MaterialTheme.colorScheme.onBackground)
                     Spacer(modifier = Modifier.height(12.dp))
                 }
 
             game.game_engines?.joinToString { it.name }?.let {
                 SectionLabel("Game Engine")
-                Text(it)
+                Text(it, color = MaterialTheme.colorScheme.onBackground)
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
             game.collections?.joinToString { it.name ?: "Unknown" }?.let {
                 SectionLabel("Series")
-                Text(it)
+                Text(it, color = MaterialTheme.colorScheme.onBackground)
                 Spacer(modifier = Modifier.height(12.dp))
             }
         }
@@ -334,19 +346,19 @@ fun GameDetailsSection(game: GameDetails) {
         ) {
             game.game_modes?.joinToString { it.name }?.let {
                 SectionLabel("Game Modes")
-                Text(it)
+                Text(it, color = MaterialTheme.colorScheme.onBackground)
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
             game.player_perspectives?.joinToString { it.name }?.let {
                 SectionLabel("Player Perspectives")
-                Text(it)
+                Text(it, color = MaterialTheme.colorScheme.onBackground)
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
             game.themes?.joinToString { it.name }?.let {
                 SectionLabel("Themes")
-                Text(it)
+                Text(it, color = MaterialTheme.colorScheme.onBackground)
                 Spacer(modifier = Modifier.height(12.dp))
             }
         }
@@ -357,9 +369,9 @@ fun GameDetailsSection(game: GameDetails) {
         ExpandableText(
             title = "Storyline:",
             text = it,
-            textColor = Color.Black,
-            titleColor = Color.Black,
-            toggleColor = Color.DarkGray
+            textColor = MaterialTheme.colorScheme.onBackground,
+            titleColor = MaterialTheme.colorScheme.primary,
+            toggleColor = MaterialTheme.colorScheme.secondary
         )
     }
 }
