@@ -38,10 +38,16 @@ object GameVaultAppViewModelProvider {
         }
 
         initializer {
+            val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as Application
             HomePageViewModel(
+                application,
                 this.createSavedStateHandle(),
                 homeApiService = RetrofitClient.apiServiceInstance,
-            )
+                )
+            /*HomePageViewModel(
+                this.createSavedStateHandle(),
+                homeApiService = RetrofitClient.apiServiceInstance,
+            )*/
         }
 
         initializer {

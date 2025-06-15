@@ -18,11 +18,16 @@ object FirebaseAuthHelper {
         Result.failure(e)
     }
 
-    suspend fun register(email: String, password: String): Result<Unit> = try {
-        auth.createUserWithEmailAndPassword(email, password).await()
-        Result.success(Unit)
-    } catch (e: Exception) {
-        Result.failure(e)
+    suspend fun register(email: String, password: String): Result<Unit> {
+        return try {
+            val auth = FirebaseAuth.getInstance()
+            val authResult = auth.createUserWithEmailAndPassword(email, password).await()
+            authResult.user?.sendEmailVerification()?.await()
+            auth.signOut()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     fun signOut() {

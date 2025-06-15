@@ -1,5 +1,6 @@
 package com.example.gamevault.ui.screens.login
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -43,6 +44,7 @@ import com.example.gamevault.validatePassword
 
 @Composable
 fun LoginScreen(
+    showVerificationDialog: Boolean = false,
     onLoginSuccess: () -> Unit,
     onRegisterClick: () -> Unit,
     onSkip: () -> Unit,
@@ -57,8 +59,22 @@ fun LoginScreen(
     var showForgotPasswordDialog by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    var showDialog by remember { mutableStateOf(showVerificationDialog) }
 
     var errorGoogle = remember { mutableStateOf<String?>(null) }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            confirmButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("OK")
+                }
+            },
+            title = { Text("Confirm e-mail") },
+            text = { Text("Check your e-mail for confirmation link.") }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -185,6 +201,13 @@ fun LoginScreen(
                     }
                 }
                 LoginState.Idle -> {}
+                LoginState.PasswordResetSent -> {
+                    LaunchedEffect(loginState) {
+                        val context = null
+                        Toast.makeText(context, "E-mail z resetem hasła został wysłany", Toast.LENGTH_SHORT).show()
+                        viewModel.resetState()
+                    }
+                }
             }
 
             error?.let {

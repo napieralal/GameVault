@@ -1,5 +1,7 @@
 package com.example.gamevault.ui.screens.games.GamesLibrary
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -8,7 +10,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,17 +26,25 @@ import com.example.gamevault.GameVaultAppViewModelProvider
 import com.example.gamevault.model.GameStatus
 import com.example.gamevault.model.UserGameEntity
 import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import com.example.gamevault.network.FirebaseLibraryService
+import com.example.gamevault.repository.LibraryRepository
+import com.example.gamevault.repository.UserGameDao
 import kotlinx.coroutines.launch
 
 @Composable
 fun LibraryScreen(
+    dao: UserGameDao,
+    firebaseService: FirebaseLibraryService,
     libraryViewModel: LibraryViewModel = viewModel(factory = GameVaultAppViewModelProvider.Factory)
 ) {
     val userGames by libraryViewModel.userGames.collectAsState()
     val selectedStatus by libraryViewModel.selectedStatus.collectAsState()
 
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -43,6 +52,10 @@ fun LibraryScreen(
         userGames
     } else {
         userGames.filter { it.status == selectedStatus.name }
+    }
+
+    LaunchedEffect(true) {
+        libraryViewModel.loadGames()
     }
 
     Column(
@@ -54,6 +67,23 @@ fun LibraryScreen(
             selected = selectedStatus,
             onSelect = libraryViewModel::setFilter
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        IconButton(onClick = {
+            libraryViewModel.loadGames()
+        }) {
+            Icon(Icons.Default.Refresh, contentDescription = "Sync with cloud")
+        }
+
+        Button(onClick = {
+            scope.launch {
+                LibraryRepository(dao, firebaseService).clearLocalData()
+                Toast.makeText(context, "Lokalne dane usunięte", Toast.LENGTH_SHORT).show()
+            }
+        }) {
+            Text("Usuń dane lokalne")
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 

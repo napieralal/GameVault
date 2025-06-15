@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gamevault.model.GameStatus
 import com.example.gamevault.model.UserGameEntity
+import com.example.gamevault.network.FirebaseLibraryService
 import com.example.gamevault.repository.GameVaultDatabase
 import com.example.gamevault.repository.LibraryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,16 +18,17 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
     private val _selectedStatus = MutableStateFlow(GameStatus.UNSPECIFIED)
     val selectedStatus: StateFlow<GameStatus> = _selectedStatus
-
     val userGames: StateFlow<List<UserGameEntity>> = _userGames
 
     init {
-        val db = GameVaultDatabase.Companion.getDatabase(application)
-        repository = LibraryRepository(db.userGameDao())
+        val db = GameVaultDatabase.getDatabase(application)
+        val firebaseService = FirebaseLibraryService()
+        repository = LibraryRepository(db.userGameDao(), firebaseService)
+
         loadGames()
     }
 
-    private fun loadGames() {
+    fun loadGames() {
         viewModelScope.launch {
             _userGames.value = repository.getAllGames()
         }

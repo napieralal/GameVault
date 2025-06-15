@@ -16,4 +16,7 @@ interface UserGameDao {
 
     @Query("DELETE FROM user_games WHERE gameId = :id")
     suspend fun deleteGameById(id: Long)
+
+    @Query("DELETE FROM user_games")
+    suspend fun clearAll()
 }

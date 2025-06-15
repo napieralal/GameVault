@@ -14,6 +14,7 @@ sealed class LoginState {
     object Idle : LoginState()
     object Loading : LoginState()
     object Success : LoginState()
+    object PasswordResetSent : LoginState()
     data class Error(val message: String) : LoginState()
 }
 
@@ -55,7 +56,7 @@ class LoginViewModel : ViewModel() {
             _loginState.value = LoginState.Loading
             val result = FirebaseAuthHelper.sendPasswordResetEmail(email)
             _loginState.value = if (result.isSuccess) {
-                LoginState.Error("Password reset email sent")
+                LoginState.PasswordResetSent
             } else {
                 LoginState.Error("Failed to send reset email: ${result.exceptionOrNull()?.message}")
             }

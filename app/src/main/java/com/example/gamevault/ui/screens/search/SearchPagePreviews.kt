@@ -21,8 +21,9 @@ fun SearchBarWithFilterIconPreview() {
 fun SortBarPreview() {
     GameVaultTheme {
         SortBar(
-            currentSort = SortType.RELEVANCE,
-            onSortSelected = {}
+            currentSort = SortType(),
+            onSortSelected = {},
+            onToggleDirection = {}
         )
     }
 }

@@ -1,11 +1,18 @@
 package com.example.gamevault.ui.screens.homepage
 
+import android.app.Application
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gamevault.model.Game
+import com.example.gamevault.model.GameStatus
+import com.example.gamevault.model.UserGameEntity
 import com.example.gamevault.network.ApiService
+import com.example.gamevault.network.FirebaseLibraryService
+import com.example.gamevault.repository.GameVaultDatabase
+import com.example.gamevault.repository.LibraryRepository
 import com.example.gamevault.ui.screens.search.SearchUiState
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +26,15 @@ data class GenreWithGameCover(
     val genreName: String,
     val genreId: Int,
     val coverImageId: String?,
-    val gameName: String
+    val gameName: String,
+)
+
+data class UserStats(
+    val total: Int,
+    val wantToPlay: Int,
+    val playing: Int,
+    val completed: Int,
+    val genreCounts: Map<String, Int>
 )
 
 sealed interface HomeUiState {
@@ -29,6 +44,9 @@ sealed interface HomeUiState {
         val newReleases: List<Game>,
         val topRated: List<Game>,
         val upcoming: List<Game>,
+        val upcomingFromLibrary: List<Game> = emptyList(),
+        val recommended: List<Game> = emptyList(),
+        val userStats: UserStats? = null
         //val genreChips: List<GenreWithGameCover>
     ) : HomeUiState
     data class Error(val message: String) : HomeUiState
@@ -39,11 +57,13 @@ enum class GameSection {
 }
 
 class HomePageViewModel(
+    application: Application,
     savedStateHandle: SavedStateHandle,
     private val homeApiService: ApiService
 ) : ViewModel() {
-
-    private val savedState = savedStateHandle
+    private val db = GameVaultDatabase.getDatabase(application)
+    private val firebaseService = FirebaseLibraryService()
+    private val libraryRepository = LibraryRepository(db.userGameDao(), firebaseService)
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -51,51 +71,22 @@ class HomePageViewModel(
     private val _isLoadingMore = MutableStateFlow(false)
     val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
 
-    private val _popularGames = mutableStateListOf<Game>().apply {
-        addAll(savedState.get<List<Game>>("popularGames") ?: emptyList())
-    }
-    private val _newReleases = mutableStateListOf<Game>().apply {
-        addAll(savedState.get<List<Game>>("newReleases") ?: emptyList())
-    }
-    private val _topRated = mutableStateListOf<Game>().apply {
-        addAll(savedState.get<List<Game>>("topRated") ?: emptyList())
-    }
-    private val _upcoming = mutableStateListOf<Game>().apply {
-        addAll(savedState.get<List<Game>>("upcoming") ?: emptyList())
-    }
+    private val _popularGames = mutableStateListOf<Game>()
+    private val _newReleases = mutableStateListOf<Game>()
+    private val _topRated = mutableStateListOf<Game>()
+    private val _upcoming = mutableStateListOf<Game>()
+    private val _recommended = mutableStateListOf<Game>()
 
-    private var currentPopularPage = savedState.get<Int>("currentPopularPage") ?: 0
-    private var currentNewReleasesPage = savedState.get<Int>("currentNewReleasesPage") ?: 0
-    private var currentTopRatedPage = savedState.get<Int>("currentTopRatedPage") ?: 0
-    private var currentUpcomingPage = savedState.get<Int>("currentUpcomingPage") ?: 0
+    private var currentPopularPage = 0
+    private var currentNewReleasesPage = 0
+    private var currentTopRatedPage = 0
+    private var currentUpcomingPage = 0
+    private var currentRecommendedPage = 0
 
-    private var initialLoadDone = savedState.get<Boolean>("initialLoadDone") ?: false
-
+    private var initialLoadDone = false
 
     init {
-        if (!initialLoadDone) {
-            fetchInitialData()
-        } else if (_uiState.value is HomeUiState.Loading) {
-            _uiState.value = HomeUiState.Success(
-                popular = _popularGames,
-                newReleases = _newReleases,
-                topRated = _topRated,
-                upcoming = _upcoming
-            )
-        }
-    }
-
-    private fun saveState() {
-        savedState["uiState"] = _uiState.value
-        savedState["popularGames"] = _popularGames.toList()
-        savedState["newReleases"] = _newReleases.toList()
-        savedState["topRated"] = _topRated.toList()
-        savedState["upcoming"] = _upcoming.toList()
-        savedState["currentPopularPage"] = currentPopularPage
-        savedState["currentNewReleasesPage"] = currentNewReleasesPage
-        savedState["currentTopRatedPage"] = currentTopRatedPage
-        savedState["currentUpcomingPage"] = currentUpcomingPage
-        savedState["initialLoadDone"] = initialLoadDone
+        fetchInitialData()
     }
 
     private fun fetchInitialData() {
@@ -104,7 +95,29 @@ class HomePageViewModel(
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
-                // Ładujemy pierwsze strony równolegle
+                val userLibraryGames = fetchUserLibraryGamesFromApi()
+                val now = System.currentTimeMillis() / 1000
+                val thirtyDaysFromNow = now + (30 * 24 * 60 * 60)
+
+                val upcomingFromLibrary = userLibraryGames.filter {
+                    it.first_release_date?.let { date ->
+                        date in now..thirtyDaysFromNow
+                    } ?: false
+                }
+
+                val userGameEntities = libraryRepository.getAllGames()
+
+                val userStats = UserStats(
+                    total = userLibraryGames.size,
+                    genreCounts = userLibraryGames
+                        .flatMap { it.genres.orEmpty() }
+                        .groupingBy { it.name }
+                        .eachCount(),
+                    wantToPlay = countByStatus(userGameEntities, GameStatus.WANT_TO_PLAY),
+                    playing = countByStatus(userGameEntities, GameStatus.PLAYING),
+                    completed = countByStatus(userGameEntities, GameStatus.COMPLETED)
+                )
+
                 val popularDeferred = async { fetchGames("rating_count desc", limit = 10) }
                 val newReleasesDeferred = async { fetchGames("first_release_date desc", releasedOnly = true, limit = 10) }
                 val topRatedDeferred = async { fetchGames("total_rating desc", limit = 10) }
@@ -115,19 +128,63 @@ class HomePageViewModel(
                 _topRated.addAll(topRatedDeferred.await())
                 _upcoming.addAll(upcomingDeferred.await())
 
+                val recommended = generateRecommendations(userLibraryGames)
+
                 _uiState.value = HomeUiState.Success(
                     popular = _popularGames,
                     newReleases = _newReleases,
                     topRated = _topRated,
-                    upcoming = _upcoming
+                    upcoming = _upcoming,
+                    upcomingFromLibrary = upcomingFromLibrary,
+                    recommended = recommended,
+                    userStats = userStats
                 )
+
                 initialLoadDone = true
-                saveState()
             } catch (e: Exception) {
                 _uiState.value = HomeUiState.Error("Failed to load games: ${e.message}")
-                saveState()
             }
         }
+    }
+
+    private suspend fun fetchUserLibraryGamesFromApi(): List<Game> {
+        return try {
+            val ids = libraryRepository.getAllGameIds()
+            println("IDs from user library: $ids")
+            if (ids.isEmpty()) return emptyList()
+
+            val query = buildString {
+                append("fields name, cover.image_id, total_rating, first_release_date, platforms.name, genres.name; ")
+                append("where id = (${ids.joinToString(",")}); ")
+                append("limit ${ids.size};")
+            }
+
+            homeApiService.getGames(query.toRequestBody())
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private suspend fun generateRecommendations(library: List<Game>): List<Game> {
+        val favoriteGenre = library
+            .flatMap { it.genres.orEmpty() }
+            .groupingBy { it.name }
+            .eachCount()
+            .maxByOrNull { it.value }
+            ?.key ?: return emptyList()
+
+        val query = buildString {
+            append("fields name, cover.image_id, total_rating, first_release_date, platforms.name, genres.name; ")
+            append("where genres.name = \"$favoriteGenre\" & cover != null & first_release_date != null; ")
+            append("sort total_rating desc; limit 10;")
+        }
+
+        return homeApiService.getGames(query.toRequestBody())
+            .filterNot { game -> library.any { it.id == game.id } }
+    }
+
+    private fun countByStatus(userGames: List<UserGameEntity>, status: GameStatus): Int {
+        return userGames.count { it.status.equals(status.name, ignoreCase = true) }
     }
 
     fun loadMore(section: GameSection) {
@@ -180,13 +237,18 @@ class HomePageViewModel(
                     GameSection.UPCOMING -> _upcoming.addAll(newGames)
                 }
 
-                _uiState.value = HomeUiState.Success(
-                    popular = _popularGames,
-                    newReleases = _newReleases,
-                    topRated = _topRated,
-                    upcoming = _upcoming
-                )
-                saveState()
+                val currentState = _uiState.value
+                if (currentState is HomeUiState.Success) {
+                    _uiState.value = HomeUiState.Success(
+                        popular = _popularGames,
+                        newReleases = _newReleases,
+                        topRated = _topRated,
+                        upcoming = _upcoming,
+                        upcomingFromLibrary = currentState.upcomingFromLibrary,
+                        recommended = currentState.recommended,
+                        userStats = currentState.userStats
+                    )
+                }
             } catch (e: Exception) {
                 // Możesz dodać obsługę błędów
             } finally {
@@ -224,38 +286,6 @@ class HomePageViewModel(
 
         return homeApiService.getGames(query.toRequestBody())
     }
-
-
-    /*private suspend fun fetchGenreWithTopGame(): List<GenreWithGameCover> {
-        val result = mutableListOf<GenreWithGameCover>()
-
-        for ((name, id) in genreMap) {
-            val query = """
-            fields name, cover.image_id;
-            where genres = $id & cover != null;
-            sort popularity desc;
-            limit 1;
-        """.trimIndent()
-
-            try {
-                val games = homeApiService.getGames(query.toRequestBody())
-                games.firstOrNull()?.let { game ->
-                    result.add(
-                        GenreWithGameCover(
-                            genreName = name,
-                            genreId = id,
-                            coverImageId = game.cover?.imageId,
-                            gameName = game.name ?: "Unknown"
-                        )
-                    )
-                }
-            } catch (e: Exception) {
-                println("Error fetching top game for genre $name: ${e.message}")
-            }
-        }
-
-        return result
-    }*/
 
     fun refresh() {
         _popularGames.clear()

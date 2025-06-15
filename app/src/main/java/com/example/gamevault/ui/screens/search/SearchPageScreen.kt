@@ -110,7 +110,8 @@ fun SearchScreen(
 
         SortBar(
             currentSort = filters.sortType,
-            onSortSelected = viewModel::updateSort
+            onSortSelected = viewModel::updateSort,
+            onToggleDirection = viewModel::toggleSortDirection
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -271,7 +272,8 @@ fun SearchBarWithFilterIcon(
 @Composable
 fun SortBar(
     currentSort: SortType,
-    onSortSelected: (SortType) -> Unit
+    onSortSelected: (SortField) -> Unit,
+    onToggleDirection: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -281,7 +283,8 @@ fun SortBar(
     ) {
         SortMenu(
             currentSort = currentSort,
-            onSortSelected = onSortSelected
+            onSortSelected = onSortSelected,
+            onToggleDirection = onToggleDirection
         )
     }
 }

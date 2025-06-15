@@ -9,19 +9,28 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import okhttp3.RequestBody.Companion.toRequestBody
 
-enum class SortType {
+enum class SortField {
     RELEVANCE, RATING, NAME, RELEASE_DATE, POPULARITY
 }
+
+enum class SortDirection {
+    ASC, DESC
+}
+
+data class SortType(
+    val field: SortField = SortField.RELEVANCE,
+    val direction: SortDirection = SortDirection.DESC
+)
 
 data class SearchFilters(
     val query: String = "",
     val selectedGenreIds: List<Int> = emptyList(),
     val selectedPlatformIds: List<Int> = emptyList(),
-    val sortType: SortType = SortType.RELEVANCE,
+    val sortType: SortType = SortType(),
     val selectedModeIds: List<Int> = emptyList(),
     val selectedPerspectiveIds: List<Int> = emptyList(),
     val ratingRange: IntRange = 0..100,
-    val yearRange: IntRange = 1980..2025,
+    val yearRange: IntRange = 1947..2030,
 )
 
 enum class FilterType {
@@ -69,7 +78,6 @@ class SearchViewModel(
     val endReached: StateFlow<Boolean> = _endReached
 
     private val _pendingFilters = MutableStateFlow(SearchFilters())
-    val pendingFilters: StateFlow<SearchFilters> = _pendingFilters.asStateFlow()
 
     init {
         observeFiltersAndFetchGames()
@@ -96,16 +104,17 @@ class SearchViewModel(
 
     private suspend fun fetchGames(filters: SearchFilters, page: Int): List<Game> {
         val offset = page * pageSize
-        val sortField = if (filters.query.isNotBlank()) {
+        val sortField = if (filters.query.isNotBlank() || filters.sortType.field == SortField.RELEVANCE) {
             null
         } else {
-            when (filters.sortType) {
-                SortType.RELEVANCE -> null
-                SortType.RATING -> "total_rating desc"
-                SortType.NAME -> "name asc"
-                SortType.RELEASE_DATE -> "first_release_date desc"
-                SortType.POPULARITY -> "rating_count desc"
+            val fieldName = when (filters.sortType.field) {
+                SortField.RATING -> "total_rating"
+                SortField.NAME -> "name"
+                SortField.RELEASE_DATE -> "first_release_date"
+                SortField.POPULARITY -> "rating_count"
+                SortField.RELEVANCE -> ""
             }
+            "$fieldName ${filters.sortType.direction.name.lowercase()}"
         }
 
         val startYearTimestamp = yearToUnixTimestamp(filters.yearRange.first)
@@ -124,26 +133,26 @@ class SearchViewModel(
             val whereConditions = mutableListOf<String>()
 
             if (filters.selectedGenreIds.isNotEmpty()) {
-                whereConditions.add("genres != null & genres = (${filters.selectedGenreIds.joinToString()})")
+                whereConditions.add("(genres = (${filters.selectedGenreIds.joinToString()}) | genres = null)")
             }
 
             if (filters.selectedPlatformIds.isNotEmpty()) {
-                whereConditions.add("platforms != null & platforms = (${filters.selectedPlatformIds.joinToString()})")
+                whereConditions.add("(platforms = (${filters.selectedPlatformIds.joinToString()}) | platforms = null)")
             }
 
             if (filters.selectedModeIds.isNotEmpty()) {
-                whereConditions.add("game_modes != null & game_modes = (${filters.selectedModeIds.joinToString()})")
+                whereConditions.add("(game_modes = (${filters.selectedModeIds.joinToString()}) | game_modes = null)")
             }
 
             if (filters.selectedPerspectiveIds.isNotEmpty()) {
-                whereConditions.add("player_perspectives != null & player_perspectives = (${filters.selectedPerspectiveIds.joinToString()})")
+                whereConditions.add("(player_perspectives = (${filters.selectedPerspectiveIds.joinToString()}) | player_perspectives = null)")
             }
 
             // Rating Range
-            whereConditions.add("total_rating >= ${filters.ratingRange.first} & total_rating <= ${filters.ratingRange.last}")
+            whereConditions.add("(total_rating >= ${filters.ratingRange.first} & total_rating <= ${filters.ratingRange.last} | total_rating = null)")
 
             // Year Range (converted to timestamps)
-            whereConditions.add("first_release_date >= $startYearTimestamp & first_release_date <= $endYearTimestamp")
+            whereConditions.add("(first_release_date = null | (first_release_date >= $startYearTimestamp & first_release_date <= $endYearTimestamp))")
 
             if (whereConditions.isNotEmpty()) {
                 append("where ${whereConditions.joinToString(" & ")}; ")
@@ -172,24 +181,6 @@ class SearchViewModel(
 
     fun updateQuery(query: String) {
         _filters.update { it.copy(query = query) }
-    }
-
-    fun toggleGenre(id: Int) {
-        _pendingFilters.update {
-            val updated = it.selectedGenreIds.toMutableList().apply {
-                if (contains(id)) remove(id) else add(id)
-            }
-            it.copy(selectedGenreIds = updated)
-        }
-    }
-
-    fun togglePlatform(id: Int) {
-        _pendingFilters.update {
-            val updated = it.selectedPlatformIds.toMutableList().apply {
-                if (contains(id)) remove(id) else add(id)
-            }
-            it.copy(selectedPlatformIds = updated)
-        }
     }
 
     fun updateSort(sort: SortType) {
@@ -224,32 +215,6 @@ class SearchViewModel(
                 _isLoadingMore.value = false
             }
         }
-    }
-
-    fun toggleMode(id: Int) {
-        _pendingFilters.update {
-            val updated = it.selectedModeIds.toMutableList().apply {
-                if (contains(id)) remove(id) else add(id)
-            }
-            it.copy(selectedModeIds = updated)
-        }
-    }
-
-    fun togglePerspective(id: Int) {
-        _pendingFilters.update {
-            val updated = it.selectedPerspectiveIds.toMutableList().apply {
-                if (contains(id)) remove(id) else add(id)
-            }
-            it.copy(selectedPerspectiveIds = updated)
-        }
-    }
-
-    fun updateRatingRange(range: IntRange) {
-        _pendingFilters.update { it.copy(ratingRange = range) }
-    }
-
-    fun updateYearRange(range: IntRange) {
-        _pendingFilters.update { it.copy(yearRange = range) }
     }
 
     fun getFilterSections(
@@ -366,16 +331,26 @@ class SearchViewModel(
         )
     }
 
-    fun applyPendingFilters() {
-        _filters.value = _pendingFilters.value
-    }
-
     fun updateFilters(newFilters: SearchFilters) {
         _filters.value = newFilters
     }
 
-    fun setGenreFilterById(genreId: Int) {
-        _filters.update { it.copy(selectedGenreIds = listOf(genreId)) }
+    fun updateSort(field: SortField) {
+        val current = _filters.value.sortType
+        val newDirection = if (current.field == field) {
+            if (current.direction == SortDirection.ASC) SortDirection.DESC else SortDirection.ASC
+        } else {
+            SortDirection.DESC
+        }
+        _filters.update {
+            it.copy(sortType = SortType(field, newDirection))
+        }
+    }
+
+    fun toggleSortDirection() {
+        val current = filters.value.sortType
+        val newDirection = if (current.direction == SortDirection.ASC) SortDirection.DESC else SortDirection.ASC
+        updateSort(current.copy(direction = newDirection))
     }
 }
 

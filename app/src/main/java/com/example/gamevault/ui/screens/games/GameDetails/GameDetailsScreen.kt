@@ -1,7 +1,13 @@
 package com.example.gamevault.ui.screens.games.GameDetails
 
 import android.icu.text.SimpleDateFormat
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -55,6 +62,15 @@ import com.example.gamevault.ui.components.GameCardVertical
 import com.example.gamevault.ui.components.SectionLabel
 import com.example.gamevault.ui.components.FullscreenImageDialog
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.DeveloperMode
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.vector.ImageVector
 import java.util.Date
 import java.util.Locale
 
@@ -164,215 +180,332 @@ fun GameDetailsScreen(
 
 @Composable
 fun GameHeader(game: GameDetails) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth()
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(16.dp)
     ) {
-        Text(
-            game.name ?: "Unknown",
-            style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier
-                .padding(bottom = 8.dp)
-                .align(Alignment.CenterHorizontally)
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            game.first_release_date?.let { timestamp ->
-                val date = Date(timestamp * 1000)
-                val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-                val formattedDate = formatter.format(date)
+            Text(
+                game.name ?: "Unknown",
+                style = MaterialTheme.typography.headlineLarge,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                fontWeight = FontWeight.Bold
+            )
 
-                Text(
-                    text = formattedDate,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-
-            game.involved_companies
-                ?.firstOrNull { it.developer == true }
-                ?.company?.name
-                ?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-        }
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-        ) {
-            game.cover?.imageId?.let { imageId ->
-                val imageUrl =
-                    "https://images.igdb.com/igdb/image/upload/t_cover_big/$imageId.jpg"
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .width(120.dp)
-                        .height(160.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                )
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.primary)
-                    .padding(12.dp)
-                    .align(Alignment.CenterVertically)
+            // Metadane gry (data wydania, developer)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = game.total_rating?.let { "★ %.1f".format(it) } ?: "",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
+                game.first_release_date?.let { timestamp ->
+                    val date = Date(timestamp * 1000)
+                    val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                    val formattedDate = formatter.format(date)
 
-                    Text(
-                        text = game.rating_count?.let {
-                            val short = when {
-                                it >= 1_000_000 -> "${it / 1_000_000}M+"
-                                it >= 1_000 -> "${it / 1_000}k+"
-                                else -> "$it"
-                            }
-                            "$short ratings"
-                        } ?: "No rating",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                    InfoChip(
+                        icon = Icons.Default.DateRange,
+                        text = formattedDate
                     )
                 }
+
+                game.involved_companies
+                    ?.firstOrNull { it.developer == true }
+                    ?.company?.name
+                    ?.let {
+                        InfoChip(
+                            icon = Icons.Default.DeveloperMode,
+                            text = it
+                        )
+                    }
+            }
+
+            // Okładka i ocena
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                game.cover?.imageId?.let { imageId ->
+                    val imageUrl = "https://images.igdb.com/igdb/image/upload/t_cover_big/$imageId.jpg"
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .width(140.dp)
+                            .height(180.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                RatingBox(
+                    rating = game.total_rating,
+                    ratingCount = game.rating_count
+                )
             }
         }
     }
 }
 
+@Composable
+private fun RatingBox(rating: Double?, ratingCount: Int?) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .padding(horizontal = 20.dp, vertical = 12.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = rating?.let { "★ %.1f".format(it) } ?: "★ --",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                text = ratingCount?.let {
+                    when {
+                        it >= 1_000_000 -> "${it / 1_000_000}M+ ratings"
+                        it >= 1_000 -> "${it / 1_000}k+ ratings"
+                        else -> "$it ratings"
+                    }
+                } ?: "No ratings",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun InfoChip(icon: ImageVector, text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
 
 @Composable
 fun GameInfoSection(game: GameDetails) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(16.dp)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+        )
     ) {
-        game.genres?.joinToString { it.name }?.let {
-            Text("Genres: $it", color = MaterialTheme.colorScheme.onSurface)
-        }
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Genres
+            if (!game.genres.isNullOrEmpty()) {
+                LabeledInfo(
+                    label = "Genres",
+                    content = game.genres.joinToString { it.name }
+                )
+            }
 
-        game.platforms?.joinToString { it.name }?.let {
-            Text("Platforms: $it", color = MaterialTheme.colorScheme.onSurface)
-        }
+            // Platforms
+            if (!game.platforms.isNullOrEmpty()) {
+                LabeledInfo(
+                    label = "Platforms",
+                    content = game.platforms.joinToString { it.name }
+                )
+            }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        game.summary?.let {
-            ExpandableText(
-                title = "Summary:",
-                text = game.summary,
-                textColor = MaterialTheme.colorScheme.onSurface,
-                titleColor = MaterialTheme.colorScheme.primary,
-                toggleColor = MaterialTheme.colorScheme.secondary
-            )
+            // Summary
+            game.summary?.let {
+                ExpandableSection(
+                    title = "Summary",
+                    content = it
+                )
+            }
         }
-        /* game.franchises?.let {
-            Text("Franchise: \n$it")
-        }*/
+    }
+}
+
+@Composable
+private fun LabeledInfo(label: String, content: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+        )
+        Text(
+            text = content,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
 @Composable
 fun GameDetailsSection(game: GameDetails) {
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+        )
     ) {
-        // === Left Column ===
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            game.involved_companies
-                ?.filter { it.developer == true }
-                ?.map { it.company.name }
-                ?.takeIf { it.isNotEmpty() }
-                ?.joinToString()
-                ?.let {
-                    SectionLabel("Main Developers")
-                    Text(it, color = MaterialTheme.colorScheme.onBackground)
-                    Spacer(modifier = Modifier.height(12.dp))
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Dzielimy sekcję na dwie kolumny
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Lewa kolumna
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    if (!game.involved_companies.isNullOrEmpty()) {
+                        val developers = game.involved_companies
+                            .filter { it.developer == true }
+                            .map { it.company.name }
+                        if (developers.isNotEmpty()) {
+                            LabeledInfo(
+                                label = "Developers",
+                                content = developers.joinToString()
+                            )
+                        }
+
+                        LabeledInfo(
+                            label = "Involved Companies",
+                            content = game.involved_companies.joinToString { it.company.name }
+                        )
+                    }
+
+                    if (!game.game_engines.isNullOrEmpty()) {
+                        LabeledInfo(
+                            label = "Game Engine",
+                            content = game.game_engines.joinToString { it.name }
+                        )
+                    }
+
+                    if (!game.collections.isNullOrEmpty()) {
+                        LabeledInfo(
+                            label = "Series",
+                            content = game.collections.joinToString { it.name ?: "Unknown" }
+                        )
+                    }
                 }
 
-            game.involved_companies
-                ?.map { it.company.name }
-                ?.takeIf { it.isNotEmpty() }
-                ?.joinToString()
-                ?.let {
-                    SectionLabel("Involved Companies")
-                    Text(it, color = MaterialTheme.colorScheme.onBackground)
-                    Spacer(modifier = Modifier.height(12.dp))
+                // Prawa kolumna
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    if (!game.game_modes.isNullOrEmpty()) {
+                        LabeledInfo(
+                            label = "Game Modes",
+                            content = game.game_modes.joinToString { it.name }
+                        )
+                    }
+
+                    if (!game.player_perspectives.isNullOrEmpty()) {
+                        LabeledInfo(
+                            label = "Perspectives",
+                            content = game.player_perspectives.joinToString { it.name }
+                        )
+                    }
+
+                    if (!game.themes.isNullOrEmpty()) {
+                        LabeledInfo(
+                            label = "Themes",
+                            content = game.themes.joinToString { it.name }
+                        )
+                    }
                 }
-
-            game.game_engines?.joinToString { it.name }?.let {
-                SectionLabel("Game Engine")
-                Text(it, color = MaterialTheme.colorScheme.onBackground)
-                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            game.collections?.joinToString { it.name ?: "Unknown" }?.let {
-                SectionLabel("Series")
-                Text(it, color = MaterialTheme.colorScheme.onBackground)
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-        }
-
-        // === Right Column ===
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            game.game_modes?.joinToString { it.name }?.let {
-                SectionLabel("Game Modes")
-                Text(it, color = MaterialTheme.colorScheme.onBackground)
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-
-            game.player_perspectives?.joinToString { it.name }?.let {
-                SectionLabel("Player Perspectives")
-                Text(it, color = MaterialTheme.colorScheme.onBackground)
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-
-            game.themes?.joinToString { it.name }?.let {
-                SectionLabel("Themes")
-                Text(it, color = MaterialTheme.colorScheme.onBackground)
-                Spacer(modifier = Modifier.height(12.dp))
+            // Storyline (pełna szerokość)
+            game.storyline?.let {
+                Spacer(modifier = Modifier.height(16.dp))
+                ExpandableSection(
+                    title = "Storyline",
+                    content = it
+                )
             }
         }
     }
+}
 
-    // === Storyline (Full Width Underneath) ===
-    game.storyline?.let {
-        ExpandableText(
-            title = "Storyline:",
-            text = it,
-            textColor = MaterialTheme.colorScheme.onBackground,
-            titleColor = MaterialTheme.colorScheme.primary,
-            toggleColor = MaterialTheme.colorScheme.secondary
-        )
+@Composable
+private fun ExpandableSection(title: String, content: String) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold
+            )
+            Icon(
+                imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                contentDescription = if (expanded) "Show less" else "Show more",
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+
+        AnimatedVisibility(
+            visible = expanded,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            Text(
+                text = content,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
     }
 }
 
@@ -393,30 +526,47 @@ fun SimilarGamesList(games: List<Game>, navController: NavHostController) {
 fun ScreenshotRow(screenshots: List<Screenshot>) {
     var expandedImageId by remember { mutableStateOf<String?>(null) }
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(max = 800.dp), // Możesz dostosować maksymalną wysokość
-        contentPadding = PaddingValues(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(vertical = 8.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
-        items(screenshots) { screenshot ->
-            val url = "https://images.igdb.com/igdb/image/upload/t_screenshot_big/${screenshot.imageId}.jpg"
-            AsyncImage(
-                model = url,
-                contentDescription = null,
-                modifier = Modifier
-                    .width(200.dp)
-                    .height(112.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable { expandedImageId = screenshot.imageId }
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Screenshots",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 12.dp)
             )
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.heightIn(max = 800.dp),
+                contentPadding = PaddingValues(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(screenshots) { screenshot ->
+                    val url = "https://images.igdb.com/igdb/image/upload/t_screenshot_big/${screenshot.imageId}.jpg"
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        AsyncImage(
+                            model = url,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(16f / 9f)
+                                .clickable { expandedImageId = screenshot.imageId }
+                        )
+                    }
+                }
+            }
         }
     }
 
-    // Fullscreen image dialog
     expandedImageId?.let { imageId ->
         FullscreenImageDialog(
             imageUrl = "https://images.igdb.com/igdb/image/upload/t_screenshot_huge/$imageId.jpg",

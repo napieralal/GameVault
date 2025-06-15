@@ -36,11 +36,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import com.example.gamevault.network.FirebaseAuthHelper
+import com.example.gamevault.network.FirebaseLibraryService
+import com.example.gamevault.repository.GameVaultDatabase
+import com.example.gamevault.repository.LibraryRepository
 import com.example.gamevault.ui.screens.login.LoginScreen
 import com.example.gamevault.ui.screens.register.RegisterScreen
 import com.example.gamevault.ui.screens.games.GameDetails.GameDetailsScreen
+import com.example.gamevault.ui.screens.games.GamesLibrary.LibraryViewModel
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 enum class GameVaultDestinations(@StringRes val title: Int, val icon: ImageVector) {
     HOMEPAGE(R.string.homepage_screen_title, Icons.Default.Home),
@@ -59,12 +67,26 @@ fun GameVaultApp(
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit
 ) {
-    val currentUser = FirebaseAuth.getInstance().currentUser
-    val isLoggedIn = remember { mutableStateOf(currentUser != null) }
-    val userEmail = remember { mutableStateOf(currentUser?.email) }
+    val context = LocalContext.current
+    val db = remember {GameVaultDatabase.getDatabase(context)}
+    val dao = db.userGameDao()
+    val firebaseService = FirebaseLibraryService()
+    val firebaseAuth = FirebaseAuth.getInstance()
+
+    var isLoggedIn by remember { mutableStateOf(firebaseAuth.currentUser != null) }
+    var userEmail by remember { mutableStateOf(firebaseAuth.currentUser?.email) }
+
+    LaunchedEffect(Unit) {
+        firebaseAuth.addAuthStateListener { auth ->
+            isLoggedIn = auth.currentUser != null
+            userEmail = auth.currentUser?.email
+        }
+        LibraryRepository(dao, firebaseService).syncLocalGamesToCloud()
+    }
+
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val screenName = backStackEntry?.destination?.route?.substringBefore("/")
     val route = backStackEntry?.destination?.route
+    val screenName = route?.substringBefore("?")
     val currentScreen = when {
         route == null -> GameVaultDestinations.HOMEPAGE
         route.startsWith(GameVaultDestinations.HOMEPAGE.name) -> GameVaultDestinations.HOMEPAGE
@@ -94,12 +116,13 @@ fun GameVaultApp(
                 GameVaultTopBar(
                     title = stringResource(currentScreen.title),
                     showNavigationIcon = showBackIcon,
-                    userEmail = if (currentScreen == GameVaultDestinations.HOMEPAGE) userEmail.value else null,
+                    userEmail = userEmail,
+                    showWelcomeMessage = currentScreen == GameVaultDestinations.HOMEPAGE,
                     onLogout = {
-                        if (isLoggedIn.value) {
+                        if (isLoggedIn) {
                             FirebaseAuthHelper.signOut()
-                            isLoggedIn.value = false
-                            userEmail.value = null
+                            isLoggedIn = false
+                            userEmail = null
                             navController.navigate(GameVaultDestinations.LOGIN.name) {
                                 popUpTo(0)
                             }
@@ -123,7 +146,7 @@ fun GameVaultApp(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = if (isLoggedIn.value) GameVaultDestinations.HOMEPAGE.name else GameVaultDestinations.LOGIN.name,
+            startDestination = if (isLoggedIn) GameVaultDestinations.HOMEPAGE.name else GameVaultDestinations.LOGIN.name,
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
@@ -138,7 +161,7 @@ fun GameVaultApp(
             }
 
             composable(GameVaultDestinations.GAMES_LIBRARY.name) {
-                LibraryScreen()
+                LibraryScreen(dao, firebaseService)
             }
 
             composable(GameVaultDestinations.GAMES_LIST.name) {
@@ -167,11 +190,44 @@ fun GameVaultApp(
                 SearchScreen(navController, genreFilter = genreFilter)
             }
 
-            composable(GameVaultDestinations.LOGIN.name) {
+            /*composable(GameVaultDestinations.LOGIN.name) {
                 LoginScreen(
                     onLoginSuccess = {
-                        userEmail.value = FirebaseAuth.getInstance().currentUser?.email
-                        isLoggedIn.value = true
+                        userEmail = FirebaseAuth.getInstance().currentUser?.email
+                        isLoggedIn = true
+                        navController.popBackStack()
+                    },
+                    onRegisterClick = {
+                        navController.navigate("REGISTER")
+                    },
+                    onSkip = {
+                        navController.navigate(GameVaultDestinations.HOMEPAGE.name) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
+            }*/
+
+            composable(
+                route = "${GameVaultDestinations.LOGIN.name}?showVerificationDialog={showVerificationDialog}",
+                arguments = listOf(
+                    navArgument("showVerificationDialog") {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    }
+                )
+            ) { backStackEntry ->
+                val showVerificationDialog = backStackEntry.arguments?.getBoolean("showVerificationDialog") ?: false
+                LoginScreen(
+                    showVerificationDialog = showVerificationDialog,
+                    onLoginSuccess = {
+                        userEmail = FirebaseAuth.getInstance().currentUser?.email
+                        isLoggedIn = true
+
+                        CoroutineScope(Dispatchers.IO).launch {
+                            LibraryRepository(dao, firebaseService).syncLocalGamesToCloud()
+                        }
+
                         navController.popBackStack()
                     },
                     onRegisterClick = {
@@ -184,12 +240,13 @@ fun GameVaultApp(
                     }
                 )
             }
+
             composable(GameVaultDestinations.REGISTER.name) {
                 RegisterScreen(
                     onRegisterSuccess = {
-                        userEmail.value = FirebaseAuth.getInstance().currentUser?.email
-                        isLoggedIn.value = true
-                        navController.popBackStack()
+                        navController.navigate("${GameVaultDestinations.LOGIN.name}?showVerificationDialog=true") {
+                            popUpTo(GameVaultDestinations.REGISTER.name) { inclusive = true }
+                        }
                     },
                     onBackToLogin = {
                         navController.popBackStack()
@@ -206,6 +263,7 @@ fun GameVaultTopBar(
     title: String,
     showNavigationIcon: Boolean,
     userEmail: String?,
+    showWelcomeMessage: Boolean,
     onNavigateUp: () -> Unit,
     onLogout: () -> Unit,
     onToggleTheme: () -> Unit,
@@ -218,11 +276,13 @@ fun GameVaultTopBar(
             Column {
                 Text(text = title, style = MaterialTheme.typography.headlineMedium)
                 userEmail?.let {
-                    Text(
-                        text = "Welcome ${it.substringBefore("@")}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    if (showWelcomeMessage) {
+                        Text(
+                            text = "Welcome ${it.substringBefore("@")}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         },

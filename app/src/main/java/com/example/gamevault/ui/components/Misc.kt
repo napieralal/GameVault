@@ -5,13 +5,23 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +38,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
+import com.example.gamevault.ui.screens.search.SortDirection
+import com.example.gamevault.ui.screens.search.SortField
 import com.example.gamevault.ui.screens.search.SortType
 
 @Composable
@@ -98,37 +110,64 @@ fun FullscreenImageDialog(imageUrl: String, onDismiss: () -> Unit) {
 }
 
 @Composable
-fun SortMenu(currentSort: SortType, onSortSelected: (SortType) -> Unit) {
+fun SortMenu(
+    currentSort: SortType,
+    onSortSelected: (SortField) -> Unit,
+    onToggleDirection: () -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
 
-    Box {
-        Text(
-            text = "Sort by: ${currentSort.name.lowercase().replaceFirstChar { it.uppercaseChar() }}",
-            modifier = Modifier
-                .clickable { expanded = true }
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(8.dp),
-            color = MaterialTheme.colorScheme.onSurface
-        )
+    val sortOptions = listOf(
+        SortField.RELEVANCE,
+        SortField.RATING,
+        SortField.NAME,
+        SortField.RELEASE_DATE,
+        SortField.POPULARITY
+    )
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        // Dropdown button
+        Button(onClick = { expanded = true }) {
+            Text(text = currentSort.field.name.replace("_", " ").lowercase()
+                .replaceFirstChar { it.uppercase() })
+        }
+
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false },
-            containerColor = MaterialTheme.colorScheme.surface
+            onDismissRequest = { expanded = false }
         ) {
-            SortType.values().forEach { type ->
+            sortOptions.forEach { sortField ->
                 DropdownMenuItem(
                     text = {
                         Text(
-                            text = type.name.lowercase().replaceFirstChar { it.uppercaseChar() },
-                            color = MaterialTheme.colorScheme.onSurface
+                            sortField.name.replace("_", " ").lowercase()
+                                .replaceFirstChar { it.uppercase() }
                         )
                     },
                     onClick = {
-                        onSortSelected(type)
+                        onSortSelected(sortField)
                         expanded = false
                     }
                 )
             }
         }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Direction toggle button
+        val icon = if (currentSort.direction == SortDirection.ASC) {
+            Icons.Default.ArrowUpward
+        } else {
+            Icons.Default.ArrowDownward
+        }
+
+        Icon(
+            imageVector = icon,
+            contentDescription = "Toggle sort direction",
+            modifier = Modifier
+                .clickable { onToggleDirection() }
+                .size(24.dp),
+            tint = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
