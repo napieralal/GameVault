@@ -78,10 +78,10 @@ fun LibraryScreen(
         Button(onClick = {
             scope.launch {
                 LibraryRepository(dao, firebaseService).clearLocalData()
-                Toast.makeText(context, "Lokalne dane usunięte", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Local data deleted", Toast.LENGTH_SHORT).show()
             }
         }) {
-            Text("Usuń dane lokalne")
+            Text("Delete local data")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
