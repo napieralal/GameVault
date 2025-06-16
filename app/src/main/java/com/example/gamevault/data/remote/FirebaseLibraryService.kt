@@ -1,4 +1,4 @@
-package com.example.gamevault.network
+package com.example.gamevault.data.remote
 
 import android.util.Log
 import com.example.gamevault.model.UserGameEntity

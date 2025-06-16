@@ -1,8 +1,8 @@
-package com.example.gamevault.repository
+package com.example.gamevault.data.repository
 
-import android.util.Log
+import com.example.gamevault.data.local.UserGameDao
 import com.example.gamevault.model.UserGameEntity
-import com.example.gamevault.network.FirebaseLibraryService
+import com.example.gamevault.data.remote.FirebaseLibraryService
 import com.google.firebase.auth.FirebaseAuth
 
 class LibraryRepository(

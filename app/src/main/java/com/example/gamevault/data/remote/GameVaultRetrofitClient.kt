@@ -1,4 +1,4 @@
-package com.example.gamevault.network
+package com.example.gamevault.data.remote
 
 import com.squareup.moshi.Moshi
 import retrofit2.Retrofit

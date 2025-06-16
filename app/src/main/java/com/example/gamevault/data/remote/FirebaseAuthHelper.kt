@@ -1,4 +1,4 @@
-package com.example.gamevault.network
+package com.example.gamevault.data.remote
 
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth

@@ -5,9 +5,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gamevault.model.GameStatus
 import com.example.gamevault.model.UserGameEntity
-import com.example.gamevault.network.FirebaseLibraryService
-import com.example.gamevault.repository.GameVaultDatabase
-import com.example.gamevault.repository.LibraryRepository
+import com.example.gamevault.data.remote.FirebaseLibraryService
+import com.example.gamevault.data.local.GameVaultDatabase
+import com.example.gamevault.data.repository.LibraryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

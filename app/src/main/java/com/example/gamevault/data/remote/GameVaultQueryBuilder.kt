@@ -1,4 +1,4 @@
-package com.example.gamevault.network
+package com.example.gamevault.data.remote
 
 object GameVaultQueryBuilder {
     /*fun searchGamesByName(name: String): String {

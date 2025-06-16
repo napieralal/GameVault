@@ -1,12 +1,11 @@
 package com.example.gamevault
 
 import android.app.Application
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.example.gamevault.network.RetrofitClient
+import com.example.gamevault.data.remote.RetrofitClient
 import com.example.gamevault.ui.screens.games.GamesLibrary.LibraryViewModel
 import com.example.gamevault.ui.screens.games.GameListScreen.GameListScreenViewModel
 import com.example.gamevault.ui.screens.games.GameDetails.GameDetailsViewModel

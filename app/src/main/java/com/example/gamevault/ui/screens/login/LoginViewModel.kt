@@ -1,10 +1,9 @@
 package com.example.gamevault.ui.screens.login
 
-import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gamevault.isValidEmail
-import com.example.gamevault.network.FirebaseAuthHelper
+import com.example.gamevault.data.remote.FirebaseAuthHelper
 import com.example.gamevault.validatePassword
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

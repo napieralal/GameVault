@@ -1,6 +1,10 @@
-package com.example.gamevault.repository
+package com.example.gamevault.data.local
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
 import com.example.gamevault.model.UserGameEntity
 
 @Dao
@@ -8,7 +12,7 @@ interface UserGameDao {
     @Query("SELECT * FROM user_games")
     suspend fun getAllGames(): List<UserGameEntity>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun insertGame(game: UserGameEntity)
 
     @Delete

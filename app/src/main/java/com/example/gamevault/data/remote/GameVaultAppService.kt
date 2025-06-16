@@ -1,4 +1,4 @@
-package com.example.gamevault.network
+package com.example.gamevault.data.remote
 
 import com.example.gamevault.model.Game
 import com.example.gamevault.model.GameDetails

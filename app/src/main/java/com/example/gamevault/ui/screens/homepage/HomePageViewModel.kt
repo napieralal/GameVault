@@ -2,25 +2,22 @@ package com.example.gamevault.ui.screens.homepage
 
 import android.app.Application
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gamevault.model.Game
 import com.example.gamevault.model.GameStatus
 import com.example.gamevault.model.UserGameEntity
-import com.example.gamevault.network.ApiService
-import com.example.gamevault.network.FirebaseLibraryService
-import com.example.gamevault.repository.GameVaultDatabase
-import com.example.gamevault.repository.LibraryRepository
-import com.example.gamevault.ui.screens.search.SearchUiState
+import com.example.gamevault.data.remote.ApiService
+import com.example.gamevault.data.remote.FirebaseLibraryService
+import com.example.gamevault.data.local.GameVaultDatabase
+import com.example.gamevault.data.repository.LibraryRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import okhttp3.RequestBody.Companion.toRequestBody
-import kotlin.collections.plus
 
 data class GenreWithGameCover(
     val genreName: String,

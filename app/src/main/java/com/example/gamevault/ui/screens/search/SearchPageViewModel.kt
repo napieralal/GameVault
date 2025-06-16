@@ -4,7 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gamevault.model.Game
-import com.example.gamevault.network.ApiService
+import com.example.gamevault.data.remote.ApiService
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import okhttp3.RequestBody.Companion.toRequestBody
