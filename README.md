@@ -22,19 +22,17 @@ GameVault is a modern Android application built with **Kotlin**, **Jetpack Compo
 |---------------------|-----------------------------------------------|
 | Language            | Kotlin                                        |
 | UI Framework        | Jetpack Compose                               |
-| Local Storage       | Room (SQLite ORM)                             |
+| Local Storage       | Room                                          |
 | Remote Data         | Retrofit, Moshi, IGDB API                     |
-| Authentication      | Firebase Auth (Email/Password, Google OAuth) |
-| State Management    | ViewModel, Kotlin Coroutines, Flow            |
+| Authentication      | Firebase Auth (Email/Password, Google OAuth)  |
+| State Management    | ViewModel, Kotlin Coroutines                  |
 | Architecture        | MVVM                                          |
-| Dependency Injection| *(Optional: Hilt/Koin – if used)*             |
 
 ---
 
 ```markdown
 ## 📁 Project Structure
 
-<pre>
 com.example.gamevault
 ├── core
 │   ├── model                 # Data models (Game, UserGameEntity, etc.)
@@ -49,4 +47,3 @@ com.example.gamevault
 ├── GameVaultApp.kt           # Application class
 ├── MainActivity.kt           # Root composable and navigation host
 └── GameVaultAppViewModelProvider.kt # ViewModel providers
-</pre>
