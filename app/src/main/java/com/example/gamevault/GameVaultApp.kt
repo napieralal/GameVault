@@ -1,6 +1,7 @@
 package com.example.gamevault
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.animateFloatAsState
@@ -45,9 +46,6 @@ import com.example.gamevault.ui.screens.login.LoginScreen
 import com.example.gamevault.ui.screens.register.RegisterScreen
 import com.example.gamevault.ui.screens.games.GameDetails.GameDetailsScreen
 import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 enum class GameVaultDestinations(@StringRes val title: Int, val icon: ImageVector) {
     HOMEPAGE(R.string.homepage_screen_title, Icons.Default.Home),
@@ -74,13 +72,31 @@ fun GameVaultApp(
 
     var isLoggedIn by remember { mutableStateOf(firebaseAuth.currentUser != null) }
     var userEmail by remember { mutableStateOf(firebaseAuth.currentUser?.email) }
+    var isDataSynced by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         firebaseAuth.addAuthStateListener { auth ->
+            val wasLoggedOut = !isLoggedIn
             isLoggedIn = auth.currentUser != null
             userEmail = auth.currentUser?.email
+
+            // Reset flagi synchronizacji gdy się wylogowujemy
+            if (!isLoggedIn) {
+                isDataSynced = false
+            }
         }
-        LibraryRepository(dao, firebaseService).syncLocalGamesToCloud()
+    }
+
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn && !isDataSynced) {
+            try {
+                LibraryRepository(dao, firebaseService).syncLocalGamesToCloud()
+                isDataSynced = true
+            } catch (e: Exception) {
+                // Obsługa błędu synchronizacji
+                Log.e("GameVaultApp", "Sync failed", e)
+            }
+        }
     }
 
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -152,7 +168,7 @@ fun GameVaultApp(
                 .background(MaterialTheme.colorScheme.background)
         ) {
             composable(GameVaultDestinations.HOMEPAGE.name) {
-                HomePageScreen(navController = navController)
+                HomePageScreen(navController = navController, isDataSynced = isDataSynced)
             }
 
             composable(GameVaultDestinations.SEARCH.name) {
@@ -223,11 +239,9 @@ fun GameVaultApp(
                         userEmail = FirebaseAuth.getInstance().currentUser?.email
                         isLoggedIn = true
 
-                        CoroutineScope(Dispatchers.IO).launch {
-                            LibraryRepository(dao, firebaseService).syncLocalGamesToCloud()
+                        navController.navigate(GameVaultDestinations.HOMEPAGE.name) {
+                            popUpTo(GameVaultDestinations.LOGIN.name) { inclusive = true }
                         }
-
-                        navController.popBackStack()
                     },
                     onRegisterClick = {
                         navController.navigate("REGISTER")
