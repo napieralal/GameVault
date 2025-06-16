@@ -18,16 +18,23 @@ import com.example.gamevault.GameVaultAppViewModelProvider
 import com.example.gamevault.GameVaultDestinations
 import com.example.gamevault.model.Game
 import com.example.gamevault.ui.components.GameCardVertical
-import java.time.LocalDate
 
 @Composable
 fun HomePageScreen(
     navController: NavHostController,
     viewModel: HomePageViewModel = viewModel(factory = GameVaultAppViewModelProvider.Factory),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isDataSynced: Boolean
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val isLoadingMore by viewModel.isLoadingMore.collectAsState()
+
+    LaunchedEffect(isDataSynced) {
+        if (isDataSynced) {
+            viewModel.refreshAfterSync()
+        }
+    }
+
 
     when (uiState) {
         is HomeUiState.Loading -> {
