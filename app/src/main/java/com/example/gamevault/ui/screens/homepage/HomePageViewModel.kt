@@ -144,6 +144,52 @@ class HomePageViewModel(
         }
     }
 
+    fun refreshAfterSync() {
+        viewModelScope.launch {
+            try {
+                val userLibraryGames = fetchUserLibraryGamesFromApi()
+                val now = System.currentTimeMillis() / 1000
+                val thirtyDaysFromNow = now + (30 * 24 * 60 * 60)
+
+                val upcomingFromLibrary = userLibraryGames.filter {
+                    it.first_release_date?.let { date ->
+                        date in now..thirtyDaysFromNow
+                    } ?: false
+                }
+
+                val userGameEntities = libraryRepository.getAllGames()
+
+                val userStats = UserStats(
+                    total = userLibraryGames.size,
+                    genreCounts = userLibraryGames
+                        .flatMap { it.genres.orEmpty() }
+                        .groupingBy { it.name }
+                        .eachCount(),
+                    wantToPlay = countByStatus(userGameEntities, GameStatus.WANT_TO_PLAY),
+                    playing = countByStatus(userGameEntities, GameStatus.PLAYING),
+                    completed = countByStatus(userGameEntities, GameStatus.COMPLETED)
+                )
+
+                val recommended = generateRecommendations(userLibraryGames)
+
+                val currentState = _uiState.value
+                if (currentState is HomeUiState.Success) {
+                    _uiState.value = HomeUiState.Success(
+                        popular = currentState.popular,
+                        newReleases = currentState.newReleases,
+                        topRated = currentState.topRated,
+                        upcoming = currentState.upcoming,
+                        upcomingFromLibrary = upcomingFromLibrary,
+                        recommended = recommended,
+                        userStats = userStats
+                    )
+                }
+            } catch (e: Exception) {
+                println("Error refreshing user data: ${e.message}")
+            }
+        }
+    }
+
     private suspend fun fetchUserLibraryGamesFromApi(): List<Game> {
         return try {
             val ids = libraryRepository.getAllGameIds()
