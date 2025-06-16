@@ -31,27 +31,22 @@ GameVault is a modern Android application built with **Kotlin**, **Jetpack Compo
 
 ---
 
+```markdown
 ## 📁 Project Structure
 
+<pre>
 com.example.gamevault
 ├── core
-│ ├── model # Data models (Game, UserGameEntity, etc.)
+│   ├── model                 # Data models (Game, UserGameEntity, etc.)
 ├── data
-│ ├── local # Room database + DAOs
-│ ├── remote # API services, Retrofit client, Firebase helpers
-│ └── repository # Repositories combining local and remote data
+│   ├── local                 # Room database + DAOs
+│   ├── remote                # API services, Retrofit client, Firebase helpers
+│   └── repository            # Repositories combining local and remote data
 ├── ui
-│ ├── theme # UI theming files
-│ ├── components # Reusable UI components
-│ └── screens # UI screens grouped by feature (login, search, etc.)
-├── GameVaultApp.kt # Application class
-├── MainActivity.kt # Root composable and navigation host
+│   ├── theme                 # UI theming files
+│   ├── components            # Reusable UI components
+│   └── screens               # UI screens grouped by feature (login, search, etc.)
+├── GameVaultApp.kt           # Application class
+├── MainActivity.kt           # Root composable and navigation host
 └── GameVaultAppViewModelProvider.kt # ViewModel providers
-
-## 📱 App Screenshots
-
-Here are some previews of the GameVault UI:
-
-| Login Screen             | Games Library              | Game Details              | Home Page              | Search Game            |
-|--------------------------|---------------------------|---------------------------|---------------------------|---------------------------|
-| ![](https://imgur.com/a/login-screen-mhFm5EK) | ![](https://imgur.com/a/games-library-IZaXKWN) | ![](https://imgur.com/a/game-details-szdFLPi) | ![]((https://imgur.com/a/home-page-kGPpPso)) | ![]((https://imgur.com/a/search-page-Khs9SnL)) |
+</pre>
