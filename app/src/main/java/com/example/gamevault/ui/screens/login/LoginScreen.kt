@@ -54,14 +54,14 @@ fun LoginScreen(
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
+    var emailError by remember { mutableStateOf<String?>(null) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
+    var generalError by remember { mutableStateOf<String?>(null) }
     var showPassword by remember { mutableStateOf(false) }
     var showForgotPasswordDialog by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     var showDialog by remember { mutableStateOf(showVerificationDialog) }
-
-    var errorGoogle = remember { mutableStateOf<String?>(null) }
 
     if (showDialog) {
         AlertDialog(
@@ -119,13 +119,14 @@ fun LoginScreen(
 
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = {
+                    email = it
+                    emailError = null
+                },
                 label = { Text("Email") },
-                isError = error != null && (!isValidEmail(email) || email.isBlank()),
+                isError = emailError != null,
                 supportingText = {
-                    if (error != null && (!isValidEmail(email) || email.isBlank())) {
-                        Text(error ?: "")
-                    }
+                    emailError?.let { Text(it) }
                 },
                 modifier = Modifier.fillMaxWidth(0.8f),
                 singleLine = true,
@@ -141,13 +142,14 @@ fun LoginScreen(
 
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = {
+                    password = it
+                    passwordError = null
+                },
                 label = { Text("Password") },
-                isError = error != null && (validatePassword(password) != null || password.isBlank()),
+                isError = passwordError != null,
                 supportingText = {
-                    if (error != null && (validatePassword(password) != null || password.isBlank())) {
-                        Text(error ?: "")
-                    }
+                    passwordError?.let { Text(it) }
                 },
                 singleLine = true,
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
@@ -182,11 +184,7 @@ fun LoginScreen(
 
             when (val state = loginState) {
                 is LoginState.Error -> {
-                    Text(
-                        text = state.message,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(8.dp)
-                    )
+                    generalError = state.message
                 }
                 LoginState.Loading -> {
                     CircularProgressIndicator()
@@ -196,7 +194,7 @@ fun LoginScreen(
                         if (loginState is LoginState.Success) {
                             onLoginSuccess()
                             viewModel.resetState()
-                            error = null
+                            generalError = null
                         }
                     }
                 }
@@ -210,32 +208,34 @@ fun LoginScreen(
                 }
             }
 
-            error?.let {
+            generalError?.let {
                 Text(it, color = MaterialTheme.colorScheme.error)
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
             Button(
                 onClick = {
-                    error = null
-                    when {
-                        email.isBlank() -> {
-                            error = "Email cannot be empty"
-                            return@Button
-                        }
-                        !isValidEmail(email) -> {
-                            error = "Please enter a valid email address"
-                            return@Button
-                        }
-                        password.isBlank() -> {
-                            error = "Password cannot be empty"
-                            return@Button
-                        }
-                        validatePassword(password) != null -> {
-                            error = validatePassword(password)
-                            return@Button
-                        }
+                    emailError = null
+                    passwordError = null
+                    generalError = null
+
+                    if (email.isBlank()) {
+                        emailError = "Email cannot be empty"
+                    } else if (!isValidEmail(email)) {
+                        emailError = "Please enter a valid email address"
                     }
+
+                    val passwordValidation = validatePassword(password)
+                    if (password.isBlank()) {
+                        passwordError = "Password cannot be empty"
+                    } else if (passwordValidation != null) {
+                        passwordError = passwordValidation
+                    }
+
+                    if (emailError != null || passwordError != null) {
+                        return@Button
+                    }
+
                     viewModel.signIn(email, password)
                 },
                 enabled = loginState != LoginState.Loading,
@@ -258,14 +258,9 @@ fun LoginScreen(
                 onLoginSuccess = onLoginSuccess,
                 onError = {
                     viewModel.resetState()
-                    error = it.toString()
+                    generalError = it.toString()
                 }
             )
-
-            errorGoogle.value?.let { errMsg ->
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(errMsg, color = MaterialTheme.colorScheme.error)
-            }
         }
 
         TextButton(onClick = onSkip) {

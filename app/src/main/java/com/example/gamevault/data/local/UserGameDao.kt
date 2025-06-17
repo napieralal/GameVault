@@ -23,4 +23,7 @@ interface UserGameDao {
 
     @Query("DELETE FROM user_games")
     suspend fun clearAll()
+
+    @Query("UPDATE user_games SET status = :newStatus WHERE gameId = :gameId")
+    suspend fun updateGameStatus(gameId: Long, newStatus: String)
 }

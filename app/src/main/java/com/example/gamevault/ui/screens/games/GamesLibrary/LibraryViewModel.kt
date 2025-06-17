@@ -1,6 +1,7 @@
 package com.example.gamevault.ui.screens.games.GamesLibrary
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gamevault.model.GameStatus
@@ -50,5 +51,21 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
     fun setFilter(status: GameStatus) {
         _selectedStatus.value = status
+    }
+
+    /*fun toggleStatus(game: UserGameEntity) {
+        val nextStatus = GameStatus.values()
+            .let { statuses ->
+                val currentIndex = statuses.indexOfFirst { it.name == game.status }
+                statuses[(currentIndex + 1) % statuses.size]
+            }
+        updateGameStatus(game.gameId, nextStatus.name)
+    }*/
+
+    fun updateGameStatus(updatedGame: UserGameEntity) {
+        viewModelScope.launch {
+            repository.updateGameStatus(updatedGame)
+            loadGames()
+        }
     }
 }

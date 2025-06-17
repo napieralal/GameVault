@@ -176,7 +176,7 @@ fun GameVaultApp(
             }
 
             composable(GameVaultDestinations.GAMES_LIBRARY.name) {
-                LibraryScreen(dao, firebaseService)
+                LibraryScreen(navController, dao, firebaseService)
             }
 
             composable(GameVaultDestinations.GAMES_LIST.name) {

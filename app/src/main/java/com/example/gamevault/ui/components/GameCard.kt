@@ -64,6 +64,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
 import com.example.gamevault.ui.screens.homepage.GenreWithGameCover
@@ -74,6 +75,7 @@ import com.example.gamevault.model.GameStatus
 import com.example.gamevault.model.UserGameEntity
 import com.example.gamevault.ui.screens.games.GamesLibrary.LibraryViewModel
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 
 fun isColorDark(color: Color): Boolean {
     return color.luminance() < 0.5
@@ -321,6 +323,8 @@ fun GameCardVertical(
         viewModel(factory = GameVaultAppViewModelProvider.Factory)
     var showDialog by remember { mutableStateOf(false) }
 
+    val haptic = LocalHapticFeedback.current
+
     if (showDialog) {
         LibraryStatusDialog(
             gameTitle = game.name ?: "Unknown",
@@ -349,7 +353,10 @@ fun GameCardVertical(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { onClick() },
-                    onLongPress = { showDialog = true }
+                    onLongPress = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        showDialog = true
+                    }
                 )
             },
         shape = RoundedCornerShape(16.dp),
@@ -439,7 +446,7 @@ fun GameCardVertical(
 }
 
 
-@Composable
+/*@Composable
 fun GenreChips(
     genres: List<GenreWithGameCover>,
     onGenreClick: (GenreWithGameCover) -> Unit
@@ -477,5 +484,5 @@ fun GenreChips(
             }
         }
     }
-}
+}*/
 

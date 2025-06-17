@@ -29,13 +29,17 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.navigation.NavHostController
+import com.example.gamevault.GameVaultDestinations
 import com.example.gamevault.data.remote.FirebaseLibraryService
 import com.example.gamevault.data.repository.LibraryRepository
 import com.example.gamevault.data.local.UserGameDao
+import com.example.gamevault.ui.components.UserGameCard
 import kotlinx.coroutines.launch
 
 @Composable
 fun LibraryScreen(
+    navController: NavHostController,
     dao: UserGameDao,
     firebaseService: FirebaseLibraryService,
     libraryViewModel: LibraryViewModel = viewModel(factory = GameVaultAppViewModelProvider.Factory)
@@ -69,19 +73,25 @@ fun LibraryScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        IconButton(onClick = {
-            libraryViewModel.loadGames()
-        }) {
-            Icon(Icons.Default.Refresh, contentDescription = "Sync with cloud")
-        }
-
-        Button(onClick = {
-            scope.launch {
-                LibraryRepository(dao, firebaseService).clearLocalData()
-                Toast.makeText(context, "Local data deleted", Toast.LENGTH_SHORT).show()
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(onClick = {
+                scope.launch {
+                    LibraryRepository(dao, firebaseService).clearLocalData()
+                    Toast.makeText(context, "Local data deleted", Toast.LENGTH_SHORT).show()
+                }
+            }) {
+                Text("Delete local data")
             }
-        }) {
-            Text("Delete local data")
+
+            IconButton(onClick = {
+                libraryViewModel.loadGames()
+            }) {
+                Icon(Icons.Default.Refresh, contentDescription = "Sync with cloud")
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -102,6 +112,12 @@ fun LibraryScreen(
                             scope.launch {
                                 snackbarHostState.showSnackbar("Game deleted")
                             }
+                        },
+                        onGameClick = { clickedGame ->
+                            navController.navigate("${GameVaultDestinations.GAME_DETAILS.name}/${clickedGame.gameId}")
+                        },
+                        onStatusChange = { updatedGame ->
+                            libraryViewModel.updateGameStatus(updatedGame)
                         }
                     )
                 }
@@ -114,112 +130,35 @@ fun LibraryScreen(
 fun StatusSelector(selected: GameStatus, onSelect: (GameStatus) -> Unit) {
     val statuses = GameStatus.values()
 
-    FlowRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    SingleChoiceSegmentedButtonRow(
+        modifier = Modifier.fillMaxWidth()
     ) {
-        statuses.forEach { status ->
-            FilterChip(
-                selected = selected == status,
+        statuses.forEachIndexed { index, status ->
+            SegmentedButton(
+                shape = SegmentedButtonDefaults.itemShape(
+                    index = index,
+                    count = statuses.size
+                ),
                 onClick = { onSelect(status) },
-                label = {
-                    Text(
-                        status.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercaseChar() }
-                    )
-                }
-            )
-        }
-    }
-}
-
-@Composable
-fun UserGameCard(
-    entry: UserGameEntity,
-    onDelete: () -> Unit // Dodajemy callback do usuwania
-) {
-    var showDeleteConfirmation by remember { mutableStateOf(false) } // Stan dla dialogu
-
-    if (showDeleteConfirmation) {
-        DeleteConfirmationDialog(
-            gameName = entry.name,
-            onDismiss = { showDeleteConfirmation = false },
-            onConfirm = {
-                onDelete()
-                showDeleteConfirmation = false
-            }
-        )
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(12.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Image(
-                painter = rememberAsyncImagePainter(entry.coverUrl),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(72.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.weight(1f)
+                selected = selected == status,
+                modifier = Modifier.weight(1f),
+                colors = SegmentedButtonDefaults.colors(
+                    activeContainerColor = MaterialTheme.colorScheme.primary,
+                    activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                    inactiveContainerColor = MaterialTheme.colorScheme.surface,
+                    inactiveContentColor = MaterialTheme.colorScheme.onSurface
+                )
             ) {
                 Text(
-                    text = entry.name,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = entry.status.replace("_", " ").lowercase()
+                    text = status.name.replace("_", " ").lowercase()
                         .replaceFirstChar { it.uppercaseChar() },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // Przycisk kosza
-            IconButton(
-                onClick = { showDeleteConfirmation = true },
-                modifier = Modifier
-                    .padding(start = 8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete game",
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        onClick = { showDeleteConfirmation = true },
-                        role = Role.Button,
-                        indication = ripple()
-                    )
+                    fontSize = 11.sp
                 )
             }
         }
     }
 }
+
 
 @Composable
 fun DeleteConfirmationDialog(

@@ -53,11 +53,16 @@ class LibraryRepository(
         localGames.forEach { game ->
             firebaseService.addGameToCloud(game)
         }
-
-        //dao.clearAll()
     }
 
     suspend fun clearLocalData() {
         dao.clearAll()
+    }
+
+    suspend fun updateGameStatus(updatedGame: UserGameEntity) {
+        if (isLoggedIn) {
+            firebaseService.addGameToCloud(updatedGame)
+        }
+        dao.insertGame(updatedGame)
     }
 }

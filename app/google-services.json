@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "479745475923",
+    "project_id": "gamevault-ac68b",
+    "storage_bucket": "gamevault-ac68b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:479745475923:android:5e3a1c4c3011021c860da6",
+        "android_client_info": {
+          "package_name": "com.example.gamevault"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "479745475923-npbujaocra3b736lpggtg6srei3lj284.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.gamevault",
+            "certificate_hash": "f5a2d0c662974976039956aca4911ffdfd7ff4e2"
+          }
+        },
+        {
+          "client_id": "479745475923-otl4q5uvoa355b512raegavcbu3bg9df.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYFPRkRl-T_gBr3yvDTyIjkE7wuFRW4mo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "479745475923-otl4q5uvoa355b512raegavcbu3bg9df.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
